@@ -1,0 +1,725 @@
+--[[
+    Deep.vs Hub duels INTRO
+    Intro com animação vindo das laterais
+--]]
+
+repeat task.wait() until game:IsLoaded()
+
+do
+    local Players = game:GetService("Players")
+    local TweenService = game:GetService("TweenService")
+    local CoreGui = game:GetService("CoreGui")
+    local player = Players.LocalPlayer
+
+    -- 6 rotating songs
+    local intros = {
+        "https://files.catbox.moe/zuid5n.mp3",
+        "https://files.catbox.moe/z6eqnt.mp3",
+        "https://files.catbox.moe/t0nlhv.mp3",
+        "https://files.catbox.moe/mthg31.mp3",
+        "https://files.catbox.moe/ddnbup.mp3",
+        "https://files.catbox.moe/hg5cr4.mp3",
+    }
+    
+    local indexFile = "YosemiteMusicIndex"
+    local currentIndex = 1
+    
+    pcall(function()
+        if isfile and isfile(indexFile) then
+            local saved = readfile(indexFile)
+            local n = tonumber(saved)
+            if n and n >= 1 and n <= #intros then
+                currentIndex = n
+            end
+        end
+    end)
+    
+    local nextIndex = currentIndex % #intros + 1
+    
+    pcall(function()
+        if writefile then
+            writefile(indexFile, tostring(nextIndex))
+        end
+    end)
+    
+    local url = intros[currentIndex]
+    print("[Deep.vs Hub duels] Playing song " .. currentIndex .. " of " .. #intros)
+    
+    local songContent = game:HttpGet(url)
+    writefile("YosemiteIntro_cache", songContent)
+    
+    local INTRO_DURATION = 9
+    
+    local blur = Instance.new("BlurEffect")
+    blur.Size = 56
+    blur.Parent = game:GetService("Lighting")
+    
+    local introGui = Instance.new("ScreenGui")
+    introGui.Name = "Deep.vs Hub duels Intro"
+    introGui.ResetOnSpawn = false
+    introGui.IgnoreGuiInset = true
+    introGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    introGui.Parent = CoreGui
+    
+    -- Deep.vs Tag vindo do lado Esquerdo
+    local waveTag = Instance.new("TextLabel", introGui)
+    waveTag.Size = UDim2.new(0, 450, 0, 80)
+    waveTag.Position = UDim2.new(-1, 0, 0.45, -40) -- Começa fora da tela (Esquerda)
+    waveTag.BackgroundTransparency = 1
+    waveTag.Text = "DEEP.VS"
+    waveTag.Font = Enum.Font.SourceSansBold
+    waveTag.TextSize = 72
+    waveTag.TextColor3 = Color3.fromRGB(0, 0, 0)
+    waveTag.TextStrokeColor3 = Color3.fromRGB(50, 50, 50)
+    waveTag.TextStrokeTransparency = 0.0
+    waveTag.TextXAlignment = Enum.TextXAlignment.Center
+    waveTag.TextTransparency = 0
+    waveTag.ZIndex = 110
+    
+    -- Subtítulo / .gg vindo do lado Direito
+    local ggTag = Instance.new("TextLabel", introGui)
+    ggTag.Size = UDim2.new(0, 200, 0, 60)
+    ggTag.Position = UDim2.new(2, 0, 0.6, -30) -- Começa fora da tela (Direita)
+    ggTag.BackgroundTransparency = 1
+    ggTag.Text = "HUB DUELS"
+    ggTag.Font = Enum.Font.SourceSansBold
+    ggTag.TextSize = 40
+    ggTag.TextColor3 = Color3.fromRGB(0, 0, 0)
+    ggTag.TextStrokeColor3 = Color3.fromRGB(50, 50, 50)
+    ggTag.TextStrokeTransparency = 0.2
+    ggTag.TextXAlignment = Enum.TextXAlignment.Center
+    ggTag.TextTransparency = 0
+    ggTag.ZIndex = 110
+    
+    local snd = Instance.new("Sound", game:GetService("SoundService"))
+    snd.SoundId = getcustomasset("YosemiteIntro_cache")
+    snd.Volume = 0.7
+    snd.Looped = false
+    snd:Play()
+    
+    -- Animate DEEP.VS to center (Esquerda -> Centro)
+    local waveTween = TweenService:Create(waveTag, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -225, 0.45, -40)
+    })
+    waveTween:Play()
+    
+    -- Animate HUB DUELS to center (Direita -> Centro)
+    local ggTween = TweenService:Create(ggTag, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -100, 0.6, -30)
+    })
+    ggTween:Play()
+    
+    task.wait(1.2)
+    local blinkActive = true
+    local visible = true
+    task.spawn(function()
+        local startTime = tick()
+        while blinkActive and (tick() - startTime) < (INTRO_DURATION - 1.5) do
+            task.wait(0.15)
+            visible = not visible
+            waveTag.TextTransparency = visible and 0 or 1
+            ggTag.TextTransparency = visible and 0 or 0.5
+        end
+    end)
+    
+    task.wait(INTRO_DURATION - 1.5)
+    
+    blinkActive = false
+    local fadeInfo = TweenInfo.new(0.6, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    TweenService:Create(waveTag, fadeInfo, {TextTransparency = 1}):Play()
+    TweenService:Create(ggTag, fadeInfo, {TextTransparency = 1}):Play()
+    TweenService:Create(snd, TweenInfo.new(0.6), {Volume = 0}):Play()
+    TweenService:Create(blur, fadeInfo, {Size = 0}):Play()
+    task.wait(0.7)
+    
+    pcall(function() snd:Stop(); snd:Destroy() end)
+    pcall(function() blur:Destroy() end)
+    pcall(function() introGui:Destroy() end)
+end
+
+-- ============================================================
+-- Deep.vs Hub duels
+-- ============================================================
+
+local Players         = game:GetService("Players")
+local RunService      = game:GetService("RunService")
+local UIS             = game:GetService("UserInputService")
+local TweenService    = game:GetService("TweenService")
+local HttpService      = game:GetService("HttpService")
+local ContentProvider = game:GetService("ContentProvider")
+local Stats           = game:GetService("Stats")
+local Lighting        = game:GetService("Lighting")
+local LP              = Players.LocalPlayer
+
+local LOGO_ID = "rbxassetid://96255128725816"
+task.spawn(function() pcall(function() ContentProvider:PreloadAsync({LOGO_ID}) end) end)
+
+local _isfile   = isfile   or (syn and syn.isfile)   or (getgenv and getgenv().isfile)   or function() return false end
+local _readfile = readfile  or (syn and syn.readfile)  or (getgenv and getgenv().readfile)  or function() return nil  end
+local _writefile= writefile or (syn and syn.writefile) or (getgenv and getgenv().writefile) or function() end
+local getconnections = getconnections or get_signal_cons or getconnects or (syn and syn.get_signal_cons)
+
+-- ============================================================
+-- STATE
+-- ============================================================
+local State = {
+    normalSpeed=60, carrySpeed=30, laggerSpeed=10.1,
+    speedToggled=false, laggerEnabled=false,
+    infJumpEnabled=false, antiRagdollEnabled=false, fpsBoostEnabled=false,
+    guiVisible=false, uiLocked=false,
+    isStealing=false, stealStartTime=nil, lastStealTick=0,
+    autoLeftEnabled=false, autoRightEnabled=false,
+    autoLeftPhase=1, autoRightPhase=1,
+    medusaLastUsed=0, medusaDebounce=false, medusaCounterEnabled=false,
+    batAimbotToggled=false, autoSwingEnabled=true,
+    hittingCooldown=false,
+    batCounterEnabled=false, batCounterDebounce=false,
+    dropEnabled=false, _tpInProgress=false,
+    lastMoveDir=Vector3.new(0,0,0),
+    unwalkEnabled=false, fovBoostEnabled=false, stackButtonsHidden=false, dragButtonsEnabled=false,
+    _prevCarry=30, _prevSpeed=false,
+    separateButtonMovement=false,
+    natureModeEnabled=false,
+}
+
+local Keys = {
+    speed=Enum.KeyCode.Q, guiHide=Enum.KeyCode.LeftControl,
+    autoLeft=Enum.KeyCode.L, autoRight=Enum.KeyCode.R,
+    lagger=Enum.KeyCode.Unknown, tpDown=Enum.KeyCode.Unknown,
+    drop=Enum.KeyCode.H, aimbot=Enum.KeyCode.Unknown,
+}
+
+-- ============================================================
+-- NATURE MODE
+-- ============================================================
+local natureOverlay = nil
+local natureOverlayGui = nil
+
+local function enableNatureMode()
+    if natureOverlay then return end
+    
+    natureOverlayGui = Instance.new("ScreenGui")
+    natureOverlayGui.Name = "NatureModeOverlay"
+    natureOverlayGui.ResetOnSpawn = false
+    natureOverlayGui.IgnoreGuiInset = true
+    natureOverlayGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    natureOverlayGui.Parent = LP:WaitForChild("PlayerGui")
+    
+    natureOverlay = Instance.new("Frame", natureOverlayGui)
+    natureOverlay.Size = UDim2.new(1, 0, 1, 0)
+    natureOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    natureOverlay.BackgroundTransparency = 0.7
+    natureOverlay.BorderSizePixel = 0
+    natureOverlay.ZIndex = 999
+    
+    local gradient = Instance.new("UIGradient", natureOverlay)
+    gradient.Rotation = 45
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(30, 30, 30)),
+        ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+    })
+    
+    local gradientAnim = TweenService:Create(gradient, TweenInfo.new(8, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), {
+        Rotation = 405
+    })
+    gradientAnim:Play()
+    
+    local blur = Instance.new("BlurEffect", natureOverlay)
+    blur.Size = 12
+end
+
+local function disableNatureMode()
+    if natureOverlayGui then
+        natureOverlayGui:Destroy()
+        natureOverlayGui = nil
+    end
+    natureOverlay = nil
+end
+-- ============================================================
+-- DEFAULT STACK BUTTON POSITIONS
+-- ============================================================
+local BTN_W=58; local BTN_H=58; local BTN_GAP=6; local COLS=2
+local stackDefs = {
+    {key="aimbot",     label="AUTO\nBAT"},
+    {key="carrySpeed", label="CARRY\nSPD"},
+    {key="autoLeft",   label="AUTO\nLEFT"},
+    {key="autoRight",  label="AUTO\nRIGHT"},
+    {key="drop",       label="DROP\nBR"},
+    {key="lagger",     label="LAGGER\nMODE"},
+    {key="tpDown",     label="TP\nDOWN"},
+    {key="laggerCarry",label="LAGGER\nCARRY"},
+}
+local GRID_W=COLS*(BTN_W+BTN_GAP)-BTN_GAP
+local GRID_H=math.ceil(#stackDefs/COLS)*(BTN_H+BTN_GAP)-BTN_GAP
+
+local function getDefaultStackPos(i)
+    local col=(i-1)%COLS
+    local row2=math.floor((i-1)/COLS)
+    return UDim2.new(1,-(GRID_W+10)+col*(BTN_W+BTN_GAP),0.5,-(GRID_H/2)+row2*(BTN_H+BTN_GAP))
+end
+
+local Steal = {
+    AutoStealEnabled=false, StealRadius=20, StealDuration=0.25,
+    Data={}, plotCache={}, plotCacheTime={}, cachedPrompts={}, promptCacheTime=0,
+}
+
+-- ============================================================
+-- STEAL PROGRESS BAR ON PLAYER HEAD
+-- ============================================================
+local stealProgressBar = nil
+local stealProgressGui = nil
+
+local function createStealProgressBar()
+    if stealProgressGui then return end
+    
+    stealProgressGui = Instance.new("BillboardGui")
+    stealProgressGui.Name = "StealProgressBar"
+    stealProgressGui.Size = UDim2.new(0, 150, 0, 20)
+    stealProgressGui.StudsOffset = Vector3.new(0, 3.5, 0)
+    stealProgressGui.AlwaysOnTop = true
+    stealProgressGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    stealProgressGui.ResetOnSpawn = false
+    
+    -- Background frame
+    local bg = Instance.new("Frame", stealProgressGui)
+    bg.Name = "Background"
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    bg.BackgroundTransparency = 0.5
+    bg.BorderSizePixel = 0
+    local bgCorner = Instance.new("UICorner", bg)
+    bgCorner.CornerRadius = UDim.new(0, 4)
+    
+    -- Progress fill frame
+    local fill = Instance.new("Frame", stealProgressGui)
+    fill.Name = "Fill"
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    fill.BackgroundTransparency = 0
+    fill.BorderSizePixel = 0
+    local fillCorner = Instance.new("UICorner", fill)
+    fillCorner.CornerRadius = UDim.new(0, 4)
+    
+    -- Percentage text
+    local text = Instance.new("TextLabel", stealProgressGui)
+    text.Name = "Percentage"
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.Text = "0%"
+    text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    text.Font = Enum.Font.GothamBold
+    text.TextSize = 10
+    text.TextStrokeTransparency = 0.5
+    text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    
+    stealProgressBar = {bg = bg, fill = fill, text = text}
+end
+
+local function updateStealProgress(progress)
+    if not stealProgressBar then return end
+    local prog = math.clamp(progress, 0, 1)
+    stealProgressBar.fill.Size = UDim2.new(prog, 0, 1, 0)
+    stealProgressBar.text.Text = math.floor(prog * 100) .. "%"
+    
+    if prog >= 0.8 then
+        stealProgressBar.fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    elseif prog >= 0.5 then
+        stealProgressBar.fill.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    else
+        stealProgressBar.fill.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    end
+end
+
+local function showStealProgressBar()
+    if not stealProgressGui then
+        createStealProgressBar()
+    end
+    
+    local char = LP.Character
+    if char and char:FindFirstChild("Head") then
+        if stealProgressGui.Parent ~= char.Head then
+            stealProgressGui.Parent = char.Head
+        end
+        stealProgressGui.Enabled = true
+    end
+end
+
+local function hideStealProgressBar()
+    if stealProgressGui then
+        stealProgressGui.Enabled = false
+        if stealProgressBar then
+            updateStealProgress(0)
+        end
+    end
+end
+
+-- ============================================================
+-- PRESETS
+-- ============================================================
+local Presets = {}
+local PRESET_FILE = "Deep.vs Hub Presets.json"
+local LAST_PRESET_FILE = "Deep.vs Hub LastPreset.json"
+local CONFIG_FILE = "Deep.vs Hub Config.json"
+
+local function buildPresetSnapshot()
+    return {
+        normalSpeed   = State.normalSpeed,
+        carrySpeed    = State.carrySpeed,
+        laggerSpeed   = State.laggerSpeed,
+        stealRadius   = Steal.StealRadius,
+        stealDuration = Steal.StealDuration,
+        infJump       = State.infJumpEnabled,
+        antiRagdoll   = State.antiRagdollEnabled,
+        fpsBoost      = State.fpsBoostEnabled,
+        medusaCounter = State.medusaCounterEnabled,
+        batCounter    = State.batCounterEnabled,
+        autoSteal     = Steal.AutoStealEnabled,
+    }
+end
+
+local function savePresetsFile()
+    local ok,encoded=pcall(function() return HttpService:JSONEncode(Presets) end)
+    if ok then pcall(function() _writefile(PRESET_FILE,encoded) end) end
+end
+
+local function loadPresetsFile()
+    local hasFile=false; pcall(function() hasFile=_isfile(PRESET_FILE) end)
+    if not hasFile then return end
+    local raw; pcall(function() raw=_readfile(PRESET_FILE) end)
+    if not raw then return end
+    local ok,decoded=pcall(function() return HttpService:JSONDecode(raw) end)
+    if ok and decoded then Presets=decoded end
+end
+
+local MOVE_KEYS={[Enum.KeyCode.W]=true,[Enum.KeyCode.A]=true,[Enum.KeyCode.S]=true,[Enum.KeyCode.D]=true,
+    [Enum.KeyCode.Up]=true,[Enum.KeyCode.Left]=true,[Enum.KeyCode.Down]=true,[Enum.KeyCode.Right]=true}
+
+local PLOT_CACHE_DURATION=2; local PROMPT_CACHE_REFRESH=0.15
+local STEAL_COOLDOWN=0.1; local MEDUSA_COOLDOWN=25; local DROP_AUTO_OFF_DELAY=0.15
+
+local POS={
+    L1=Vector3.new(-476.48,-6.28,92.73), L2=Vector3.new(-483.12,-4.95,94.80),
+    L_FACE=Vector3.new(-482.25,-4.96,92.09),
+    R1=Vector3.new(-476.16,-6.52,25.62), R2=Vector3.new(-483.06,-5.03,25.48),
+    R_FACE=Vector3.new(-482.06,-6.93,35.47),
+}
+
+local Conns={autoSteal=nil,antiRag=nil,autoLeft=nil,autoRight=nil,aimbot=nil,anchor={},progress=nil,batCounter=nil,unwalk=nil}
+
+local h,hrp
+local setAutoLeft,setAutoRight,setInfJump,setAntiRag,setFps
+local setMedusaCounter,setUnwalkToggle,setAimbot,setAutoSwing
+local setLagger,setDropBrainrot,setInstaGrab,setFovBoost
+local setNatureMode
+local fovBoostConn = nil
+
+local function enableFovBoost()
+    workspace.CurrentCamera.FieldOfView = 120
+    if fovBoostConn then fovBoostConn:Disconnect() end
+    fovBoostConn = RunService.RenderStepped:Connect(function()
+        if not State.fovBoostEnabled then fovBoostConn:Disconnect(); fovBoostConn = nil; return end
+        workspace.CurrentCamera.FieldOfView = 120
+    end)
+end
+
+local function disableFovBoost()
+    State.fovBoostEnabled = false
+    if fovBoostConn then fovBoostConn:Disconnect(); fovBoostConn = nil end
+    workspace.CurrentCamera.FieldOfView = 70
+end
+
+local setupMedusaCounter,stopMedusaCounter,startAntiRagdoll,stopAntiRagdoll
+local applyFPSBoost,startAutoSteal,stopAutoSteal
+local startAutoLeft,stopAutoLeft,startAutoRight,stopAutoRight
+local saveConfig,loadConfig,runDropBrainrot,stopDropBrainrot,doTpDown
+local startBatAimbot,stopBatAimbot,startBatCounter,stopBatCounter,setBatCounter
+local stackBtnRefs={}; local stackWrappers={}; local keybindBtnRefs={}
+local normalBox,carryBox,laggerBox,uiScaleBox,stealRadBox,lockBtn
+local setHideButtonsToggle
+local radTB
+
+local presetListFrame=nil
+local presetNameBox=nil
+local rebuildPresetList
+
+-- ============================================================
+-- COLORS (All Black & Dark Shades)
+-- ============================================================
+local C = {
+    winBg       = Color3.fromRGB(0, 0, 0),
+    winBorder   = Color3.fromRGB(50, 50, 50),
+    topBg       = Color3.fromRGB(0, 0, 0),
+    topTitle    = Color3.fromRGB(255, 255, 255),
+    topSub      = Color3.fromRGB(150, 150, 150),
+    topBtn      = Color3.fromRGB(20, 20, 20),
+    topBtnHov   = Color3.fromRGB(50, 50, 50),
+    topDivider  = Color3.fromRGB(30, 30, 30),
+    tabBarBg    = Color3.fromRGB(0, 0, 0),
+    tabBarDiv   = Color3.fromRGB(30, 30, 30),
+    tabIdle     = Color3.fromRGB(100, 100, 100),
+    tabActive   = Color3.fromRGB(255, 255, 255),
+    tabActiveBg = Color3.fromRGB(30, 30, 30),
+    tabUnderline= Color3.fromRGB(255, 255, 255),
+    sectionTxt  = Color3.fromRGB(255, 255, 255),
+    sectionDiv  = Color3.fromRGB(30, 30, 30),
+    rowBg       = Color3.fromRGB(10, 10, 10),
+    rowBorder   = Color3.fromRGB(30, 30, 30),
+    rowLabel    = Color3.fromRGB(220, 220, 220),
+    rowSub      = Color3.fromRGB(120, 120, 120),
+    rowValue    = Color3.fromRGB(180, 180, 180),
+    rowHov      = Color3.fromRGB(30, 30, 30),
+    inputBg     = Color3.fromRGB(20, 20, 20),
+    inputBorder = Color3.fromRGB(40, 40, 40),
+    inputFocus  = Color3.fromRGB(100, 100, 100),
+    inputTxt    = Color3.fromRGB(255, 255, 255),
+    pillOff     = Color3.fromRGB(20, 20, 20),
+    pillOn      = Color3.fromRGB(60, 60, 60),
+    dotOff      = Color3.fromRGB(80, 80, 80),
+    dotOn       = Color3.fromRGB(255, 255, 255),
+    pillBorder  = Color3.fromRGB(80, 80, 80),
+    modeBtnBg   = Color3.fromRGB(15, 15, 15),
+    modeBtnBrd  = Color3.fromRGB(30, 30, 30),
+    modeBtnTxt  = Color3.fromRGB(200, 200, 200),
+    modeBtnActBg= Color3.fromRGB(50, 50, 50),
+    modeBtnActTx= Color3.fromRGB(255, 255, 255),
+    chipBg      = Color3.fromRGB(15, 15, 15),
+    chipBorder  = Color3.fromRGB(30, 30, 30),
+    chipTxt     = Color3.fromRGB(255, 255, 255),
+    btnBg       = Color3.fromRGB(20, 20, 20),
+    btnBorder   = Color3.fromRGB(50, 50, 50),
+    btnTxt      = Color3.fromRGB(255, 255, 255),
+    btnHov      = Color3.fromRGB(50, 50, 50),
+    stackBg     = Color3.fromRGB(0, 0, 0),
+    stackBrd    = Color3.fromRGB(30, 30, 30),
+    stackTxt    = Color3.fromRGB(255, 255, 255),
+    stackActBg  = Color3.fromRGB(40, 40, 40),
+    stackActBrd = Color3.fromRGB(80, 80, 80),
+    stackActTxt = Color3.fromRGB(255, 255, 255),
+    stackDot    = Color3.fromRGB(60, 60, 60),
+    stackDotOn  = Color3.fromRGB(255, 255, 255),
+    infoBg      = Color3.fromRGB(0, 0, 0),
+    infoBrd     = Color3.fromRGB(30, 30, 30),
+    infoTxt     = Color3.fromRGB(200, 200, 200),
+    infoVal     = Color3.fromRGB(255, 255, 255),
+    infoFill    = Color3.fromRGB(60, 60, 60),
+    accent      = Color3.fromRGB(40, 40, 40),
+    accentDim   = Color3.fromRGB(20, 20, 20),
+    presetBg    = Color3.fromRGB(10, 10, 10),
+    presetBrd   = Color3.fromRGB(30, 30, 30),
+    presetLoad  = Color3.fromRGB(40, 40, 40),
+    presetDel   = Color3.fromRGB(20, 20, 20),
+    delBrd      = Color3.fromRGB(40, 40, 40),
+    lockOn      = Color3.fromRGB(255, 255, 255),
+    divider     = Color3.fromRGB(30, 30, 30),
+}
+
+-- ============================================================
+-- CLEANUP
+-- ============================================================
+for _,name in pairs({"VyseSlottedGUI","VyseAsireGUI","VyseAsireHubV4","VyseAsireHubV5","VyseAsireHubV5_1","AsireHubV5_1","AsireHubV5_2","J5HubV5_2","J5HubV5_3","BloomHub", "Wavecc", "Yosemite", "vampire Hub duels", "Deep.vs Hub duels"}) do
+    pcall(function() local o=game:GetService("CoreGui"):FindFirstChild(name); if o then o:Destroy() end end)
+    pcall(function() local o=LP:WaitForChild("PlayerGui"):FindFirstChild(name); if o then o:Destroy() end end)
+end
+
+-- ============================================================
+-- ROOT GUI
+-- ============================================================
+local gui=Instance.new("ScreenGui")
+gui.Name="Deep.vs Hub duels"; gui.ResetOnSpawn=false; gui.DisplayOrder=10
+gui.IgnoreGuiInset=true; gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+gui.Parent=LP:WaitForChild("PlayerGui")
+
+local uiScaleObj=Instance.new("UIScale",gui); uiScaleObj.Scale=1.0
+
+-- ============================================================
+-- HELPERS
+-- ============================================================
+local function mkCorner(p,r) local c=Instance.new("UICorner",p); c.CornerRadius=UDim.new(0,r or 8); return c end
+local function mkStroke(p,col,th)
+    local s=Instance.new("UIStroke",p); s.Color=col; s.Thickness=th or 1
+    s.ApplyStrokeMode=Enum.ApplyStrokeMode.Border; return s
+end
+local function mkPad(p,t,b,l,r)
+    local pd=Instance.new("UIPadding",p)
+    pd.PaddingTop=UDim.new(0,t or 0); pd.PaddingBottom=UDim.new(0,b or 0)
+    pd.PaddingLeft=UDim.new(0,l or 0); pd.PaddingRight=UDim.new(0,r or 0)
+    return pd
+end
+-- ============================================================
+-- MAIN WINDOW
+-- ============================================================
+local WIN_W = 340
+local WIN_H = 420
+local TITLE_H = 52
+local SIDE_TAB_W = 70
+
+local mainOuter = Instance.new("Frame", gui)
+mainOuter.Name = "MainOuter"
+mainOuter.Size = UDim2.new(0, WIN_W + SIDE_TAB_W, 0, WIN_H)
+mainOuter.Position = UDim2.new(0.5, -(WIN_W + SIDE_TAB_W)/2, 0.5, -WIN_H/2 + 80)
+mainOuter.BackgroundColor3 = C.winBg
+mainOuter.BackgroundTransparency = 0
+mainOuter.BorderSizePixel = 0
+mainOuter.ClipsDescendants = true
+mainOuter.Active = true
+mainOuter.Visible = false
+mkStroke(mainOuter, C.winBorder, 1.5)
+mkCorner(mainOuter, 10)
+
+do
+    local _drag, _ds, _sp = false, nil, nil
+    mainOuter.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1
+            or inp.UserInputType == Enum.UserInputType.Touch then
+            _drag = true; _ds = inp.Position; _sp = mainOuter.Position
+            inp.Changed:Connect(function()
+                if inp.UserInputState == Enum.UserInputState.End then _drag = false end
+            end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(inp)
+        if not _drag then return end
+        if inp.UserInputType == Enum.UserInputType.MouseMovement
+            or inp.UserInputType == Enum.UserInputType.Touch then
+            local d = inp.Position - _ds
+            mainOuter.Position = UDim2.new(_sp.X.Scale, _sp.X.Offset + d.X, _sp.Y.Scale, _sp.Y.Offset + d.Y)
+        end
+    end)
+end
+
+-- ============================================================
+-- SIDE TABS
+-- ============================================================
+local sideTabs = Instance.new("Frame", mainOuter)
+sideTabs.Size = UDim2.new(0, SIDE_TAB_W, 1, 0)
+sideTabs.Position = UDim2.new(0, 0, 0, 0)
+sideTabs.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+sideTabs.BackgroundTransparency = 0.6
+sideTabs.BorderSizePixel = 0
+sideTabs.ZIndex = 5
+mkCorner(sideTabs, 10)
+
+local sideTabsList = Instance.new("UIListLayout", sideTabs)
+sideTabsList.FillDirection = Enum.FillDirection.Vertical
+sideTabsList.SortOrder = Enum.SortOrder.LayoutOrder
+sideTabsList.Padding = UDim.new(0, 2)
+sideTabsList.VerticalAlignment = Enum.VerticalAlignment.Top
+
+local TABS = {"Speed", "Auto Bat", "Steals", "Movement", "Sky", "Configs"}
+local currentTab = "Speed"
+local tabBtns = {}; local tabPages = {}
+
+for i, name in ipairs(TABS) do
+    local btn = Instance.new("TextButton", sideTabs)
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.BackgroundColor3 = (name == currentTab) and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(0, 0, 0)
+    btn.BackgroundTransparency = (name == currentTab) and 0 or 0.4
+    btn.BorderSizePixel = 0
+    btn.Text = name
+    btn.TextColor3 = (name == currentTab) and Color3.fromRGB(255,255,255) or Color3.fromRGB(150, 150, 150)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 10
+    btn.TextWrapped = true
+    btn.ZIndex = 7
+    btn.LayoutOrder = i
+    btn.AutoButtonColor = false
+    mkStroke(btn, Color3.fromRGB(40, 40, 40), 1)
+    mkCorner(btn, 6)
+    tabBtns[name] = {btn = btn, underline = nil}
+
+    btn.MouseButton1Click:Connect(function()
+        currentTab = name
+        for _, n in ipairs(TABS) do
+            local t = tabBtns[n]; local active = (n == name)
+            TweenService:Create(t.btn, TweenInfo.new(0.18), {
+                BackgroundColor3 = active and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(0, 0, 0),
+                BackgroundTransparency = active and 0 or 0.4,
+                TextColor3 = active and Color3.fromRGB(255,255,255) or Color3.fromRGB(150, 150, 150),
+            }):Play()
+            if tabPages[n] then tabPages[n].Visible = active end
+        end
+    end)
+end
+
+-- ============================================================
+-- HEADER
+-- ============================================================
+local header = Instance.new("Frame", mainOuter)
+header.Size = UDim2.new(1, -SIDE_TAB_W, 0, TITLE_H)
+header.Position = UDim2.new(0, SIDE_TAB_W, 0, 0)
+header.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+header.BackgroundTransparency = 0.5
+header.BorderSizePixel = 0; header.ZIndex = 5
+mkCorner(header, 10)
+
+local hAccent = Instance.new("Frame", header)
+hAccent.Size = UDim2.new(0, 3, 0, 22); hAccent.Position = UDim2.new(0, 0, 0, 3)
+hAccent.BackgroundColor3 = Color3.fromRGB(255, 255, 255); hAccent.BorderSizePixel = 0; hAccent.ZIndex = 6
+mkCorner(hAccent, 2)
+
+local logoBadge = Instance.new("Frame", header)
+logoBadge.Size = UDim2.new(0, 24, 0, 24); logoBadge.Position = UDim2.new(0, 8, 0, 2)
+logoBadge.BackgroundColor3 = Color3.fromRGB(40, 40, 40); logoBadge.BorderSizePixel = 0; logoBadge.ZIndex = 6
+mkCorner(logoBadge, 6)
+local logoBadgeLbl = Instance.new("TextLabel", logoBadge)
+logoBadgeLbl.Size = UDim2.new(1,0,1,0); logoBadgeLbl.BackgroundTransparency = 1
+logoBadgeLbl.Text = "D"; logoBadgeLbl.TextColor3 = Color3.fromRGB(255,255,255)
+logoBadgeLbl.Font = Enum.Font.GothamBlack; logoBadgeLbl.TextSize = 10; logoBadgeLbl.ZIndex = 7
+
+local titleLbl = Instance.new("TextLabel", header)
+titleLbl.Size = UDim2.new(0, 120, 0, 14); titleLbl.Position = UDim2.new(0, 38, 0, 2)
+titleLbl.BackgroundTransparency = 1; titleLbl.Text = "DEEP.VS HUB"
+titleLbl.TextColor3 = Color3.fromRGB(255, 255, 255); titleLbl.Font = Enum.Font.GothamBlack
+titleLbl.TextSize = 11; titleLbl.TextXAlignment = Enum.TextXAlignment.Left; titleLbl.ZIndex = 6
+
+local verLbl = Instance.new("TextLabel", header)
+verLbl.Size = UDim2.new(0, 50, 0, 12); verLbl.Position = UDim2.new(0, 38, 0, 16)
+verLbl.BackgroundTransparency = 1; verLbl.Text = "v1.0 · autosave"
+verLbl.TextColor3 = Color3.fromRGB(150, 150, 150); verLbl.Font = Enum.Font.Gotham
+verLbl.TextSize = 7; verLbl.TextXAlignment = Enum.TextXAlignment.Left; verLbl.ZIndex = 6
+
+local closeBtn = Instance.new("TextButton", header)
+closeBtn.Size = UDim2.new(0, 20, 0, 20); closeBtn.Position = UDim2.new(1, -24, 0, 4)
+closeBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); closeBtn.BorderSizePixel = 0
+closeBtn.Text = "×"; closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Font = Enum.Font.GothamBlack; closeBtn.TextSize = 13; closeBtn.ZIndex = 8
+mkStroke(closeBtn, Color3.fromRGB(50, 50, 50), 1)
+mkCorner(closeBtn, 6)
+closeBtn.MouseButton1Click:Connect(function() State.guiVisible = false; mainOuter.Visible = false end)
+
+-- ============================================================
+-- TOGGLE BUTTON (DEEP.VS)
+-- ============================================================
+local vBtnFrame = Instance.new("Frame", gui)
+vBtnFrame.Name = "Deep.vs Hub duels VBtn"
+vBtnFrame.Size = UDim2.new(0, 65, 0, 65)
+vBtnFrame.Position = UDim2.new(0, 10, 0.5, -32)
+vBtnFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+vBtnFrame.BackgroundTransparency = 0.3
+vBtnFrame.BorderSizePixel = 0
+vBtnFrame.Active = true
+vBtnFrame.ZIndex = 20
+mkStroke(vBtnFrame, Color3.fromRGB(100, 100, 100), 2)
+mkCorner(vBtnFrame, 32)
+
+local vBtnLbl = Instance.new("TextLabel", vBtnFrame)
+vBtnLbl.Size = UDim2.new(1, 0, 1, 0)
+vBtnLbl.BackgroundTransparency = 1
+vBtnLbl.Text = "D"
+vBtnLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+vBtnLbl.Font = Enum.Font.GothamBlack
+vBtnLbl.TextSize = 28
+vBtnLbl.TextXAlignment = Enum.TextXAlignment.Center
+vBtnLbl.TextYAlignment = Enum.TextYAlignment.Center
+vBtnLbl.ZIndex = 21
+
+vBtnFrame.InputBegan:Connect(function(inp)
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+        State.guiVisible = not State.guiVisible
+        mainOuter.Visible = State.guiVisible
+    end
+end)
+
+print("[Deep.vs Hub duels] Loaded Successfully!")
